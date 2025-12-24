@@ -148,7 +148,7 @@ Be warm, supportive, and specific. Don't be judgmental.''';
       return Scaffold(
         appBar: AppBar(
           title: const Text('Your Financial Plan'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: const Color(0xFF4A90E2),
           foregroundColor: Colors.white,
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -158,7 +158,7 @@ Be warm, supportive, and specific. Don't be judgmental.''';
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Financial Plan'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: const Color(0xFF4A90E2),
         foregroundColor: Colors.white,
         actions: [
           IconButton(

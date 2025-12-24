@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'gemini_config.dart';
 import 'pages/progress_page.dart';
 import 'pages/financial_plan_page.dart';
+import 'pages/calendar_page.dart';
 import 'services/banking_service.dart';
 import 'services/notification_service.dart';
 import 'widgets/plaid_link_simulator.dart';
@@ -4926,7 +4927,9 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hello!',
+                          firstName != null && firstName!.isNotEmpty
+                              ? 'Hello, $firstName!'
+                              : 'Hello!',
                           style: Theme.of(context)
                               .textTheme
                               .headlineMedium
@@ -5049,6 +5052,20 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const FinancialPlanPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionButton(
+                      context,
+                      icon: Icons.calendar_month,
+                      label: 'Calendar',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CalendarPage(),
                           ),
                         );
                       },
