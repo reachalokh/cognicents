@@ -7,6 +7,7 @@ import 'gemini_config.dart';
 import 'pages/progress_page.dart';
 import 'pages/financial_plan_page.dart';
 import 'services/banking_service.dart';
+import 'services/notification_service.dart';
 import 'widgets/plaid_link_simulator.dart';
 
 void main() {
@@ -4944,15 +4945,46 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: Icon(Icons.settings, color: Colors.grey[600]),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SettingsPage()),
-                        );
-                      },
+                    Row(
+                      children: [
+                        // Test Notification Button
+                        IconButton(
+                          icon: Icon(Icons.notifications_active,
+                              color: Colors.grey[600]),
+                          tooltip: 'Test Notification',
+                          onPressed: () async {
+                            final notificationService = NotificationService();
+                            await notificationService.initialize();
+                            await notificationService.requestPermissions();
+                            await notificationService.showNotification(
+                              id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                              title: '🔔 Test Notification',
+                              body:
+                                  'Notifications are working! You\'re all set.',
+                              payload: 'test',
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Notification sent! Check your notification center.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.settings, color: Colors.grey[600]),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const SettingsPage()),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
