@@ -10,6 +10,7 @@ import 'pages/calendar_page.dart';
 import 'pages/savings_page.dart' as savings;
 import 'services/banking_service.dart';
 import 'services/notification_service.dart';
+import 'pages/nudge_test_page.dart';
 import 'widgets/plaid_link_simulator.dart';
 
 void main() {
@@ -4976,6 +4977,19 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                             }
+                          },
+                        ),
+                        // Nudge Lab Button
+                        IconButton(
+                          icon: Icon(Icons.science, color: Colors.purple[400]),
+                          tooltip: 'Nudge Lab',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NudgeTestPage(),
+                              ),
+                            );
                           },
                         ),
                         IconButton(
