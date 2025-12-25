@@ -39,7 +39,12 @@ class _ProgressPageState extends State<ProgressPage> {
   double get debtPayments =>
       widget.debts.fold(0.0, (sum, debt) => sum + (debt.minimumPayment ?? 0));
 
-  double get netWorth => emergencySavings - totalDebt;
+  // Debt reduction progress (0-100%)
+  double get debtReductionProgress {
+    final total = totalDebt + totalPaid;
+    if (total <= 0) return 0;
+    return (totalPaid / total) * 100;
+  }
 
   double get debtToIncomeRatio {
     if (monthlyIncome <= 0) return 0;
@@ -50,15 +55,17 @@ class _ProgressPageState extends State<ProgressPage> {
     // Calculate a 0-100 solvency score based on multiple factors
     double score = 50; // Base score
 
-    // Net worth factor (-20 to +20)
-    if (netWorth >= 0) {
+    // Debt reduction progress factor (-15 to +20)
+    if (debtReductionProgress >= 75) {
       score += 20;
-    } else if (netWorth > -10000) {
+    } else if (debtReductionProgress >= 50) {
+      score += 15;
+    } else if (debtReductionProgress >= 25) {
       score += 10;
-    } else if (netWorth > -50000) {
+    } else if (debtReductionProgress >= 10) {
+      score += 5;
+    } else if (totalDebt > 0) {
       score -= 5;
-    } else {
-      score -= 15;
     }
 
     // Debt-to-income ratio factor (-15 to +15)
@@ -215,11 +222,10 @@ class _ProgressPageState extends State<ProgressPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Solvency Score Card
           _buildSolvencyScoreCard(),
           const SizedBox(height: 16),
-          // Net Worth Card
-          _buildNetWorthCard(),
+          // Solvency Breakdown Explanation
+          _buildSolvencyBreakdown(),
           const SizedBox(height: 16),
           // Progress Chart
           _buildProgressChart(),
@@ -345,8 +351,13 @@ class _ProgressPageState extends State<ProgressPage> {
     return "Start with small steps - track spending and make minimum payments.";
   }
 
-  Widget _buildNetWorthCard() {
-    final isPositive = netWorth >= 0;
+  Widget _buildSolvencyBreakdown() {
+    // Calculate individual factor scores for explanation
+    final monthsOfExpenses =
+        monthlyExpenses > 0 ? emergencySavings / monthlyExpenses : 0;
+    final debtProgress = debtReductionProgress;
+    final dti = debtToIncomeRatio;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -357,96 +368,153 @@ class _ProgressPageState extends State<ProgressPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  isPositive ? Icons.trending_up : Icons.trending_down,
-                  color: isPositive ? Colors.green : Colors.red,
-                ),
+                Icon(Icons.analytics,
+                    color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 const Text(
-                  'Net Worth',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  'Score Breakdown',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
-              '${isPositive ? '+' : ''}\$${netWorth.abs().toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: isPositive ? Colors.green : Colors.red,
-              ),
+              'Here\'s why your score is $solvencyScore:',
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
             ),
             const SizedBox(height: 16),
-            // Assets vs Liabilities bar
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Savings',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$${emergencySavings.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey[300],
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Total Debt',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$${totalDebt.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            // Debt Progress Factor
+            _buildScoreFactor(
+              icon: Icons.trending_down,
+              title: 'Debt Progress',
+              value: '${debtProgress.toStringAsFixed(0)}% paid',
+              impact: debtProgress >= 50
+                  ? 'Positive'
+                  : debtProgress >= 10
+                      ? 'Neutral'
+                      : 'Needs Work',
+              color: debtProgress >= 50
+                  ? Colors.green
+                  : debtProgress >= 10
+                      ? Colors.amber
+                      : Colors.orange,
             ),
-            const SizedBox(height: 12),
-            // Visual balance bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: (emergencySavings / (emergencySavings + totalDebt + 1))
-                    .clamp(0, 1),
-                minHeight: 8,
-                backgroundColor: Colors.red.withOpacity(0.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+            const Divider(height: 24),
+            // Debt-to-Income Factor
+            _buildScoreFactor(
+              icon: Icons.percent,
+              title: 'Debt-to-Income',
+              value: '${dti.toStringAsFixed(0)}%',
+              impact: dti <= 20
+                  ? 'Excellent'
+                  : dti <= 35
+                      ? 'Good'
+                      : 'High',
+              color: dti <= 20
+                  ? Colors.green
+                  : dti <= 35
+                      ? Colors.amber
+                      : Colors.red,
+            ),
+            const Divider(height: 24),
+            // Emergency Fund Factor
+            _buildScoreFactor(
+              icon: Icons.savings,
+              title: 'Emergency Fund',
+              value: '${monthsOfExpenses.toStringAsFixed(1)} months',
+              impact: monthsOfExpenses >= 3
+                  ? 'Strong'
+                  : monthsOfExpenses >= 1
+                      ? 'Building'
+                      : 'Low',
+              color: monthsOfExpenses >= 3
+                  ? Colors.green
+                  : monthsOfExpenses >= 1
+                      ? Colors.amber
+                      : Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _getImprovementTip(),
+                      style: TextStyle(fontSize: 12, color: Colors.blue[900]),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildScoreFactor({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String impact,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text(value,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            impact,
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.bold, fontSize: 11),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getImprovementTip() {
+    final monthsOfExpenses =
+        monthlyExpenses > 0 ? emergencySavings / monthlyExpenses : 0;
+
+    if (monthsOfExpenses < 1) {
+      return 'Tip: Focus on building 1 month of emergency savings first.';
+    } else if (debtToIncomeRatio > 35) {
+      return 'Tip: Your debt is high relative to income. Focus on paying down debt.';
+    } else if (debtReductionProgress < 25) {
+      return 'Tip: Keep making payments consistently - every bit counts!';
+    }
+    return 'Tip: Great progress! Consider extra payments to accelerate debt payoff.';
   }
 
   Widget _buildProgressChart() {
@@ -719,10 +787,11 @@ class _ProgressPageState extends State<ProgressPage> {
         color: Colors.yellow[700]!,
       ),
       _Milestone(
-        title: 'Positive Net Worth',
-        description: 'Your savings exceed your debts',
+        title: '3 Month Savings',
+        description: 'You have 3+ months of emergency savings',
         icon: Icons.star,
-        isCompleted: netWorth > 0,
+        isCompleted: monthsOfEmergencyFund >= 3,
+        progress: (monthsOfEmergencyFund / 3).clamp(0, 1),
         color: Colors.green[700]!,
       ),
       _Milestone(
@@ -889,13 +958,14 @@ class _ProgressPageState extends State<ProgressPage> {
       ));
     }
 
-    // Net worth insight
-    if (netWorth < 0) {
+    // Debt payoff progress insight
+    if (debtReductionProgress < 50 && totalDebt > 0) {
+      final remaining = totalDebt;
       insights.add(_Insight(
-        icon: Icons.balance,
-        title: 'Path to Positive Net Worth',
+        icon: Icons.trending_down,
+        title: 'Keep Going!',
         description:
-            'You\'re \$${(-netWorth).toStringAsFixed(0)} away from positive net worth. Every payment helps!',
+            'You have \$${remaining.toStringAsFixed(0)} left to pay off. Every payment brings you closer to freedom!',
         color: Colors.purple,
         priority: 2,
       ));

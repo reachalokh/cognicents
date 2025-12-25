@@ -7,6 +7,7 @@ import 'gemini_config.dart';
 import 'pages/progress_page.dart';
 import 'pages/financial_plan_page.dart';
 import 'pages/calendar_page.dart';
+import 'pages/savings_page.dart' as savings;
 import 'services/banking_service.dart';
 import 'services/notification_service.dart';
 import 'widgets/plaid_link_simulator.dart';
@@ -5086,6 +5087,27 @@ class _HomePageState extends State<HomePage> {
                           ),
                         );
                       },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Savings Button
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        context,
+                        icon: Icons.savings,
+                        label: 'Savings',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const savings.SavingsPage(),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),

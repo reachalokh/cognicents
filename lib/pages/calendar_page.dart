@@ -139,6 +139,13 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showRecordPaymentDialog(context),
+        backgroundColor: const Color(0xFF4A90E2),
+        icon: const Icon(Icons.payment, color: Colors.white),
+        label:
+            const Text('Record Payment', style: TextStyle(color: Colors.white)),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -159,6 +166,211 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _showRecordPaymentDialog(BuildContext context) async {
+    if (_debts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No debts to record payment for')),
+      );
+      return;
+    }
+
+    Debt? selectedDebt = _debts.first;
+    final amountController = TextEditingController(
+      text: selectedDebt.minimumPayment.toStringAsFixed(2),
+    );
+    DateTime paymentDate = DateTime.now();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4A90E2).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          const Icon(Icons.payment, color: Color(0xFF4A90E2)),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Record Payment',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Debt Selector
+                const Text('Select Debt',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<Debt>(
+                      value: selectedDebt,
+                      isExpanded: true,
+                      items: _debts
+                          .map((d) => DropdownMenuItem(
+                                value: d,
+                                child: Text(
+                                  '${d.name} (\$${d.currentBalance.toStringAsFixed(0)} remaining)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        setModalState(() {
+                          selectedDebt = val;
+                          amountController.text =
+                              val?.minimumPayment.toStringAsFixed(2) ?? '';
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Amount Input
+                const Text('Payment Amount',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    prefixText: '\$ ',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    hintText: 'Enter amount',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Date selector
+                const Text('Payment Date',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: paymentDate,
+                      firstDate:
+                          DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setModalState(() => paymentDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            size: 20, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text(_formatDate(paymentDate)),
+                        const Spacer(),
+                        Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final amount =
+                          double.tryParse(amountController.text) ?? 0;
+                      if (amount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please enter a valid amount')),
+                        );
+                        return;
+                      }
+                      if (selectedDebt != null) {
+                        await _recordPayment(
+                            selectedDebt!, amount, paymentDate);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A90E2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Record Payment',
+                        style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _recordPayment(Debt debt, double amount, DateTime date) async {
+    // Create PaymentRecord
+    final payment = PaymentRecord(
+      date: date,
+      amount: amount,
+      isOnTime: date.day <= (debt.dueDate?.day ?? 28),
+      isMinimum: amount <= debt.minimumPayment,
+    );
+
+    // Use DataService.recordPayment which handles everything
+    await DataService.recordPayment(debt.id, payment);
+
+    // Reload to refresh UI
+    await _loadDebts();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Recorded \$${amount.toStringAsFixed(2)} payment to ${debt.name}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Widget _buildMonthlySummary(List<_BillEvent> bills, double total) {
