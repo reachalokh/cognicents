@@ -10,6 +10,7 @@ import 'pages/calendar_page.dart';
 import 'pages/savings_page.dart' as savings;
 import 'services/banking_service.dart';
 import 'services/notification_service.dart';
+import 'services/bill_reminder_service.dart';
 import 'pages/nudge_test_page.dart';
 import 'widgets/plaid_link_simulator.dart';
 
@@ -30,6 +31,11 @@ void main() {
     debugPrint('🚀 Calling runApp(MyApp)');
     runApp(const MyApp());
     debugPrint('✅ runApp returned (this line is rarely reached)');
+
+    // Initialize bill reminder service after app starts
+    Future.delayed(const Duration(seconds: 2), () {
+      BillReminderService().init();
+    });
   } catch (e, stack) {
     debugPrint('❌ CRITICAL MAIN ERROR: $e');
     debugPrint(stack.toString());
