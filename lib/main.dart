@@ -14,14 +14,21 @@ import 'widgets/plaid_link_simulator.dart';
 import 'services/gamification_service.dart';
 import 'services/notification_service.dart';
 import 'pages/nudge_test_page.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tzlib;
 
-void main() {
+void main() async {
   // Debug logging for black screen issue
   debugPrint('🔥🔥🔥 DART STARTING MAIN 🔥🔥🔥');
 
   try {
     WidgetsFlutterBinding.ensureInitialized();
     debugPrint('✅ WidgetsFlutterBinding initialized');
+
+    // Initialize timezone for scheduled notifications
+    tz.initializeTimeZones();
+    tzlib.setLocalLocation(tzlib.getLocation('America/Los_Angeles'));
+    debugPrint('✅ Timezone initialized');
 
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
