@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/gamification_service.dart';
 
 /// Savings Page - Track and manage your savings
 /// Allows users to view, add, and track their savings progress
@@ -49,6 +50,12 @@ class _SavingsPageState extends State<SavingsPage> {
     );
 
     await DataService.saveFinancialData(updatedData);
+
+    // Gamification Integration
+    await GamificationService.awardXP(XPAction.addSavings);
+    await GamificationService.updateChallengeProgress(
+        ChallengeCategory.savings);
+
     await _loadData();
   }
 

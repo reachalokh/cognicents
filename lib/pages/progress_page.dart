@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../services/gamification_service.dart';
 
 /// Progress Page - Track savings and solvency journey
 /// Focuses on the path to financial freedom with milestones and achievements
@@ -19,6 +20,13 @@ class ProgressPage extends StatefulWidget {
 
 class _ProgressPageState extends State<ProgressPage> {
   int _selectedView = 0; // 0: Journey, 1: Milestones, 2: Insights
+
+  @override
+  void initState() {
+    super.initState();
+    // Complete the "Review Progress" challenge when visiting this page
+    GamificationService.updateChallengeProgress(ChallengeCategory.tracking);
+  }
 
   // Calculate key financial metrics
   double get totalDebt =>

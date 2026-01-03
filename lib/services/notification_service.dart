@@ -209,4 +209,110 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
     debugPrint('🔔 All notifications cancelled');
   }
+
+  /// Schedule a test notification to fire in X seconds (for testing background notifications)
+  Future<void> scheduleTestNotification({
+    required int secondsFromNow,
+    String? customMessage,
+  }) async {
+    final scheduledTime = DateTime.now().add(Duration(seconds: secondsFromNow));
+    await scheduleNotification(
+      id: 99999, // Fixed ID for test notifications
+      title: '🧪 Test Notification',
+      body: customMessage ??
+          'This notification was scheduled $secondsFromNow seconds ago. The app can be closed and this still works!',
+      scheduledDate: scheduledTime,
+      payload: 'test_scheduled',
+    );
+    debugPrint('🧪 Test notification scheduled for $scheduledTime');
+  }
+
+  /// Schedule a daily reminder at a specific time
+  /// This will fire every day even when the app is closed
+  Future<void> scheduleDailyReminder({
+    required int hour,
+    required int minute,
+    required String title,
+    required String body,
+    int notificationId = 1000,
+  }) async {
+    if (!_isInitialized) await initialize();
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'cognicents_daily_channel',
+      'CogniCents Daily Reminders',
+      channelDescription: 'Daily reminder notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Calculate next occurrence of this time
+    final now = DateTime.now();
+    var scheduledDate = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    await _notificationsPlugin.zonedSchedule(
+      notificationId,
+      title,
+      body,
+      _convertToTZDateTime(scheduledDate),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents:
+          DateTimeComponents.time, // This makes it repeat daily!
+      payload: 'daily_reminder',
+    );
+
+    debugPrint('🔔 Daily reminder scheduled for $hour:$minute');
+  }
+
+  /// Schedule the default daily motivational reminder
+  Future<void> scheduleDefaultDailyReminder(
+      {int hour = 9, int minute = 0}) async {
+    await scheduleDailyReminder(
+      hour: hour,
+      minute: minute,
+      title: '💪 Daily Check-in',
+      body:
+          'Open CogniCents to keep your streak going and stay on track with your financial goals!',
+      notificationId: 1001,
+    );
+  }
+
+  /// Schedule a streak protection reminder (fires in evening if not logged in)
+  Future<void> scheduleStreakProtectionReminder() async {
+    await scheduleDailyReminder(
+      hour: 20, // 8 PM
+      minute: 0,
+      title: '🔥 Protect Your Streak!',
+      body: 'Don\'t forget to check in today to keep your streak alive!',
+      notificationId: 1002,
+    );
+  }
+
+  /// Get list of pending notifications (for debugging)
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _notificationsPlugin.pendingNotificationRequests();
+  }
+
+  /// Cancel daily reminders
+  Future<void> cancelDailyReminders() async {
+    await cancelNotification(1001);
+    await cancelNotification(1002);
+    debugPrint('🔔 Daily reminders cancelled');
+  }
 }
