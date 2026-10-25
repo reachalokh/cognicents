@@ -1,5 +1,7 @@
 # CogniCents
 
+<img src="assets/images/CogniCents_Logo.png" alt="CogniCents logo" width="220" />
+
 CogniCents is a Flutter-based personal finance and debt-management application designed to help users track debt, plan repayment strategies, monitor savings goals, and receive personalized nudges and AI-generated financial guidance.
 
 This repository is a developer-oriented project overview and setup guide for the app as it currently exists in code.
