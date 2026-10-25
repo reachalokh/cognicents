@@ -58,3 +58,6 @@ app.*.map.json
 
 # CocoaPods
 **/Podfile.lock
+
+# API Keys - NEVER commit these!
+lib/gemini_config.dart

@@ -81,7 +81,7 @@ class _NudgeTestPageState extends State<NudgeTestPage> {
       }
     });
 
-    await _nudgeManager.evaluateNudges();
+    final result = await _nudgeManager.runNudgeEngine();
 
     setState(() {
       for (var config in _configs) {
@@ -91,9 +91,11 @@ class _NudgeTestPageState extends State<NudgeTestPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Evaluated all nudges (check notifications)'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text(result != null
+              ? '✅ Nudge scheduled: ${result.title}'
+              : '❌ No eligible nudges (limits or rules not met)'),
+          backgroundColor: result != null ? Colors.green : Colors.orange,
         ),
       );
     }
@@ -101,18 +103,14 @@ class _NudgeTestPageState extends State<NudgeTestPage> {
 
   IconData _getIconForNudge(String nudgeId) {
     switch (nudgeId) {
-      case 'inactive_payment':
-        return Icons.schedule;
-      case 'streak_celebration':
-        return Icons.local_fire_department;
-      case 'debt_progress':
-        return Icons.trending_up;
       case 'upcoming_payment':
         return Icons.alarm;
-      case 'weekly_summary':
-        return Icons.calendar_today;
-      case 'motivational':
+      case 'streak_milestone':
+        return Icons.local_fire_department;
+      case 'extra_payment_opportunity':
         return Icons.lightbulb;
+      case 're_engagement':
+        return Icons.waving_hand;
       default:
         return Icons.notifications;
     }
@@ -120,18 +118,14 @@ class _NudgeTestPageState extends State<NudgeTestPage> {
 
   Color _getColorForNudge(String nudgeId) {
     switch (nudgeId) {
-      case 'inactive_payment':
-        return Colors.orange;
-      case 'streak_celebration':
-        return Colors.red;
-      case 'debt_progress':
-        return Colors.green;
       case 'upcoming_payment':
         return Colors.purple;
-      case 'weekly_summary':
+      case 'streak_milestone':
+        return Colors.orange;
+      case 'extra_payment_opportunity':
+        return Colors.green;
+      case 're_engagement':
         return Colors.blue;
-      case 'motivational':
-        return Colors.amber;
       default:
         return Colors.grey;
     }
@@ -322,6 +316,35 @@ class _NudgeTestPageState extends State<NudgeTestPage> {
                                             color: Colors.grey[700],
                                           ),
                                         ),
+                                        if (lastResult
+                                            .explanation.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.blue.withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.info_outline,
+                                                    size: 14,
+                                                    color: Colors.blue),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Why: ${lastResult.explanation}',
+                                                    style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color: Colors.blue),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),

@@ -22,8 +22,15 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.2
+
+# flutter_launcher_icons configuration (must be at root level)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/CogniCents_Logo.png"
 
 flutter:
   uses-material-design: true
